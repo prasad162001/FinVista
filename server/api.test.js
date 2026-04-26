@@ -96,12 +96,30 @@ test('auth and plan API flows work end-to-end', async () => {
     assert.equal(create.response.status, 201)
     assert.equal(create.body.plan.name, 'My Loan Plan')
 
+    const pfPlan = await json('/api/plans', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${register.body.token}`,
+      },
+      body: JSON.stringify({
+        type: 'pf-vpf',
+        name: 'PF Test Plan',
+        description: 'Testing PF creation',
+        inputs: { monthlyContribution: 15000, contributionDay: 5 },
+        summary: { totalMonthlyContribution: 18000, maturityAmount: 3200000 },
+      }),
+    })
+
+    assert.equal(pfPlan.response.status, 201)
+    assert.equal(pfPlan.body.plan.type, 'pf-vpf')
+
     const plans = await json('/api/plans', {
       headers: { Authorization: `Bearer ${register.body.token}` },
     })
 
     assert.equal(plans.response.status, 200)
-    assert.equal(plans.body.plans.length, 1)
+    assert.equal(plans.body.plans.length, 2)
 
     const dashboard = await json('/api/dashboard', {
       headers: { Authorization: `Bearer ${register.body.token}` },
@@ -109,7 +127,7 @@ test('auth and plan API flows work end-to-end', async () => {
 
     assert.equal(dashboard.response.status, 200)
     assert.equal(dashboard.body.summary.loanPlans, 1)
-    assert.equal(dashboard.body.summary.monthlyCommitment, 12668)
+    assert.equal(dashboard.body.summary.monthlyCommitment, 30668)
 
     const unauthorizedPlans = await json('/api/plans')
     assert.equal(unauthorizedPlans.response.status, 401)
@@ -130,6 +148,60 @@ test('auth and plan API flows work end-to-end', async () => {
     })
 
     assert.equal(invalidType.response.status, 400)
+
+    const invalidInputs = await json('/api/plans', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${register.body.token}`,
+      },
+      body: JSON.stringify({
+        type: 'loan',
+        name: 'Bad Inputs',
+        description: 'Inputs should be an object',
+        inputs: ['not', 'valid'],
+        summary: { monthlyPayment: 1200 },
+      }),
+    })
+
+    assert.equal(invalidInputs.response.status, 400)
+    assert.equal(invalidInputs.body.message, 'Plan inputs must be a valid object.')
+
+    const invalidSummary = await json('/api/plans', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${register.body.token}`,
+      },
+      body: JSON.stringify({
+        type: 'loan',
+        name: 'Bad Summary',
+        description: 'Summary should be an object',
+        inputs: { amount: 100000 },
+        summary: ['not', 'valid'],
+      }),
+    })
+
+    assert.equal(invalidSummary.response.status, 400)
+    assert.equal(invalidSummary.body.message, 'Plan summary must be a valid object.')
+
+    const invalidTokenSave = await json('/api/plans', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer not-a-real-token',
+      },
+      body: JSON.stringify({
+        type: 'loan',
+        name: 'Unauthorized Save',
+        description: 'Should not save',
+        inputs: { amount: 1000000, rate: 9, years: 10, extraPayment: 0 },
+        summary: { monthlyPayment: 12668, totalInterest: 520160, interestSaved: 0 },
+      }),
+    })
+
+    assert.equal(invalidTokenSave.response.status, 401)
+    assert.equal(invalidTokenSave.body.message, 'Invalid or expired session.')
 
     const removed = await json(`/api/plans/${create.body.plan._id}`, {
       method: 'DELETE',

@@ -1,12 +1,14 @@
 import { useState } from 'react'
+import { NumericField } from '../../components/NumericField'
 import { calculateInsurance } from '../../lib/calculators'
 import { formatCurrency, formatNumber } from '../../lib/formatters'
+import { updateNumericField } from '../../lib/formNumbers'
 
 const initialState = {
   name: 'Family Term Cover',
-  age: 32,
-  coverage: 10000000,
-  term: 25,
+  age: '32',
+  coverage: '10000000',
+  term: '25',
   smoker: 'no',
   riders: 'critical',
 }
@@ -17,6 +19,9 @@ export function InsuranceCalculator({ onSave, accessMode }) {
   const [message, setMessage] = useState('')
 
   const result = calculateInsurance(form)
+  const updateAge = updateNumericField(setForm, 'age')
+  const updateCoverage = updateNumericField(setForm, 'coverage')
+  const updateTerm = updateNumericField(setForm, 'term')
 
   function updateField(field, value) {
     setForm((current) => ({ ...current, [field]: value }))
@@ -30,7 +35,7 @@ export function InsuranceCalculator({ onSave, accessMode }) {
       await onSave({
         type: 'insurance',
         name: form.name,
-        description: `Insurance estimate for ${formatCurrency(form.coverage)} coverage`,
+        description: `Insurance estimate for ${formatCurrency(Number(form.coverage) || 0)} coverage`,
         inputs: form,
         summary: result,
       })
@@ -67,36 +72,9 @@ export function InsuranceCalculator({ onSave, accessMode }) {
                 onChange={(event) => updateField('name', event.target.value)}
               />
             </label>
-            <label className="field">
-              <span>Age</span>
-              <input
-                type="number"
-                min="18"
-                max="70"
-                value={form.age}
-                onChange={(event) => updateField('age', Number(event.target.value))}
-              />
-            </label>
-            <label className="field">
-              <span>Coverage amount</span>
-              <input
-                type="number"
-                min="100000"
-                step="100000"
-                value={form.coverage}
-                onChange={(event) => updateField('coverage', Number(event.target.value))}
-              />
-            </label>
-            <label className="field">
-              <span>Policy term (years)</span>
-              <input
-                type="number"
-                min="5"
-                max="40"
-                value={form.term}
-                onChange={(event) => updateField('term', Number(event.target.value))}
-              />
-            </label>
+            <NumericField label="Age" type="number" min="18" max="70" inputMode="numeric" value={form.age} onChange={updateAge} />
+            <NumericField label="Coverage amount" type="number" min="100000" step="100000" inputMode="numeric" value={form.coverage} onChange={updateCoverage} />
+            <NumericField label="Policy term (years)" type="number" min="0" max="40" inputMode="numeric" value={form.term} onChange={updateTerm} />
             <label className="field">
               <span>Smoking status</span>
               <select
@@ -127,7 +105,7 @@ export function InsuranceCalculator({ onSave, accessMode }) {
           <strong className="result-number">{formatCurrency(result.monthlyPremium)}</strong>
           <p>
             Annual premium {formatCurrency(result.annualPremium)} for{' '}
-            {formatCurrency(form.coverage)} coverage.
+            {formatCurrency(Number(form.coverage) || 0)} coverage.
           </p>
 
           <div className="result-grid">

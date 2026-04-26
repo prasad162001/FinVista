@@ -1,6 +1,10 @@
-import { formatCurrency } from '../../lib/formatters'
+import { formatCompactCurrency, formatCurrencyWithWords } from '../../lib/formatters'
 
-export function TrendChart({ items }) {
+export function TrendChart({
+  items,
+  title = 'Commitment trend',
+  description = 'A visual estimate of how your financial load could evolve this year.',
+}) {
   const maxValue = Math.max(...items.map((item) => item.value), 1)
   const average = items.reduce((sum, item) => sum + item.value, 0) / items.length
   const peak = items.reduce((top, item) => (item.value > top.value ? item : top), items[0])
@@ -9,35 +13,41 @@ export function TrendChart({ items }) {
     <div className="chart-card">
       <div className="chart-header">
         <div>
-          <h3>Commitment trend</h3>
-          <p>A visual estimate of how your financial load could evolve this year.</p>
+          <h3>{title}</h3>
+          <p>{description}</p>
         </div>
       </div>
 
-      <div className="trend-chart" aria-label="Commitment trend">
+      <div className="trend-chart" aria-label={title}>
         {items.map((item) => (
-          <div key={item.label} className="trend-bar-group">
+          <div
+            key={item.label}
+            className="trend-bar-group"
+            title={`${item.label}: ${formatCurrencyWithWords(item.value)}`}
+          >
+            <span className="trend-value-badge">{formatCompactCurrency(item.value)}</span>
             <div
               className="trend-bar"
-              style={{ height: `${(item.value / maxValue) * 100}%` }}
+              style={{ height: `${Math.max((item.value / maxValue) * 100, 28)}%` }}
             >
-              <span>{formatCurrency(item.value)}</span>
+              <span title={formatCurrencyWithWords(item.value)}>{formatCompactCurrency(item.value)}</span>
             </div>
-            <strong>{item.label}</strong>
+            <strong className="truncate-1" title={item.label}>{item.label}</strong>
           </div>
         ))}
       </div>
 
       <div className="chart-insights">
-        <div className="insight-pill">
-          <span>Average quarter</span>
-          <strong>{formatCurrency(average)}</strong>
+        <div className="insight-pill" title={formatCurrencyWithWords(average)}>
+          <span>Average period</span>
+          <strong>{formatCompactCurrency(average)}</strong>
         </div>
-        <div className="insight-pill">
+        <div
+          className="insight-pill"
+          title={`${peak.label}: ${formatCurrencyWithWords(peak.value)}`}
+        >
           <span>Highest pressure point</span>
-          <strong>
-            {peak.label} • {formatCurrency(peak.value)}
-          </strong>
+          <strong>{`at ${peak.label}: ${formatCompactCurrency(peak.value)}`}</strong>
         </div>
       </div>
     </div>

@@ -46,7 +46,8 @@ Copy `.env.example` to `.env` and update values for your environment.
 - `JWT_SECRET`: required for secure production authentication
 - `PORT`: backend API port
 - `VITE_API_URL`: frontend API base URL
-- `FINVISTA_DB_PATH`: SQLite database path
+- `MONGODB_URI`: production database connection string for MongoDB Atlas or another hosted MongoDB
+- `FINVISTA_DB_PATH`: SQLite fallback database path for local development or tests
 
 ## API Routes
 
@@ -61,7 +62,8 @@ Copy `.env.example` to `.env` and update values for your environment.
 
 - Set `VITE_API_URL` if your frontend and backend are hosted on different domains.
 - If they are deployed together behind one domain, the frontend can keep using `/api`.
-- Persist the SQLite file in `server/data/finvista.db` or replace SQLite with Postgres/MySQL for multi-user production.
+- For production deployment, set `MONGODB_URI` so FinVista stores users and plans in MongoDB.
+- Without `MONGODB_URI`, the app falls back to SQLite for local development and test use.
 - Set a strong `JWT_SECRET` in production and do not rely on the development fallback.
 
 ## Product Name

@@ -13,6 +13,30 @@ function summaryLine(plan) {
     return `Maturity value ${formatCurrency(plan.summary?.futureValue)}`
   }
 
+  if (plan.type === 'pf-vpf') {
+    return `PF corpus ${formatCurrency(plan.summary?.maturityAmount)}`
+  }
+
+  if (plan.type === 'term-plan') {
+    return `Cover ${formatCurrency(plan.summary?.sumAssured)}`
+  }
+
+  if (plan.type === 'health-insurance') {
+    return `Coverage ${formatCurrency(plan.summary?.totalCoverage)}`
+  }
+
+  if (plan.type === 'property-insurance') {
+    return `Insured ${formatCurrency(plan.summary?.insuredValue)}`
+  }
+
+  if (plan.type === 'tax') {
+    return `Tax liability ${formatCurrency(plan.summary?.taxLiability)}`
+  }
+
+  if (plan.type === 'expenses') {
+    return `Monthly spend ${formatCurrency(plan.summary?.totalMonthlyExpenses)}`
+  }
+
   return 'Saved financial scenario'
 }
 

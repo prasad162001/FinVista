@@ -2,6 +2,7 @@ const TOKEN_KEY = 'finvista.token'
 const USER_KEY = 'finvista.user'
 const GUEST_PLANS_KEY = 'finvista.guest-plans'
 const ACCESS_KEY = 'finvista.access-mode'
+const THEME_KEY = 'finvista.theme'
 
 export function getStoredToken() {
   return localStorage.getItem(TOKEN_KEY)
@@ -42,4 +43,12 @@ export function getGuestPlans() {
 
 export function saveGuestPlans(plans) {
   localStorage.setItem(GUEST_PLANS_KEY, JSON.stringify(plans))
+}
+
+export function getStoredTheme() {
+  return localStorage.getItem(THEME_KEY) || 'light'
+}
+
+export function setStoredTheme(theme) {
+  localStorage.setItem(THEME_KEY, theme)
 }

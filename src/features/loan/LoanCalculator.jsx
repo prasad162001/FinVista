@@ -1,13 +1,15 @@
 import { useState } from 'react'
+import { NumericField } from '../../components/NumericField'
 import { calculateLoan } from '../../lib/calculators'
 import { formatCurrency, formatNumber } from '../../lib/formatters'
+import { updateNumericField } from '../../lib/formNumbers'
 
 const initialState = {
   name: 'Home Loan Plan',
-  amount: 4500000,
-  rate: 8.6,
-  years: 20,
-  extraPayment: 2500,
+  amount: '4500000',
+  rate: '8.6',
+  years: '20',
+  extraPayment: '2500',
 }
 
 export function LoanCalculator({ onSave, accessMode }) {
@@ -16,6 +18,10 @@ export function LoanCalculator({ onSave, accessMode }) {
   const [message, setMessage] = useState('')
 
   const result = calculateLoan(form)
+  const updateAmount = updateNumericField(setForm, 'amount')
+  const updateRate = updateNumericField(setForm, 'rate')
+  const updateYears = updateNumericField(setForm, 'years')
+  const updateExtraPayment = updateNumericField(setForm, 'extraPayment')
 
   function updateField(field, value) {
     setForm((current) => ({ ...current, [field]: value }))
@@ -29,7 +35,7 @@ export function LoanCalculator({ onSave, accessMode }) {
       await onSave({
         type: 'loan',
         name: form.name,
-        description: `Loan plan for ${formatCurrency(form.amount)} over ${form.years} years`,
+        description: `Loan plan for ${formatCurrency(Number(form.amount) || 0)} over ${form.years || 0} years`,
         inputs: form,
         summary: result,
       })
@@ -66,55 +72,32 @@ export function LoanCalculator({ onSave, accessMode }) {
                 onChange={(event) => updateField('name', event.target.value)}
               />
             </label>
-            <label className="field">
-              <span>Loan amount</span>
-              <input
-                type="number"
-                min="0"
-                value={form.amount}
-                onChange={(event) => updateField('amount', Number(event.target.value))}
-              />
-            </label>
-            <label className="field">
-              <span>Interest rate (%)</span>
-              <input
-                type="number"
-                min="0"
-                step="0.1"
-                value={form.rate}
-                onChange={(event) => updateField('rate', Number(event.target.value))}
-              />
-            </label>
-            <label className="field">
-              <span>Loan term (years)</span>
-              <input
-                type="number"
-                min="1"
-                value={form.years}
-                onChange={(event) => updateField('years', Number(event.target.value))}
-              />
-            </label>
+            <NumericField label="Loan amount" type="number" min="0" inputMode="numeric" value={form.amount} onChange={updateAmount} />
+            <NumericField label="Interest rate (%)" type="number" min="0" step="0.1" inputMode="decimal" value={form.rate} onChange={updateRate} />
+            <NumericField label="Loan term (years)" type="number" min="0" inputMode="numeric" value={form.years} onChange={updateYears} />
           </div>
 
-          <label className="field">
+          <div className="field">
             <span>Extra monthly payment</span>
             <input
               type="range"
               min="0"
               max="50000"
               step="500"
-              value={form.extraPayment}
-              onChange={(event) => updateField('extraPayment', Number(event.target.value))}
+              value={Number(form.extraPayment) || 0}
+              onChange={updateExtraPayment}
             />
-            <input
+            <NumericField
+              label="Extra monthly payment amount"
               type="number"
               min="0"
               step="500"
+              inputMode="numeric"
               value={form.extraPayment}
-              onChange={(event) => updateField('extraPayment', Number(event.target.value))}
+              onChange={updateExtraPayment}
+              help="Speed up payoff and reduce total interest."
             />
-            <small>Speed up payoff and reduce total interest.</small>
-          </label>
+          </div>
         </div>
 
         <div className="result-card">
@@ -122,7 +105,7 @@ export function LoanCalculator({ onSave, accessMode }) {
           <strong className="result-number">{formatCurrency(result.monthlyPayment)}</strong>
           <p>
             Base EMI {formatCurrency(result.basePayment)} with extra payment of{' '}
-            {formatCurrency(form.extraPayment)}.
+            {formatCurrency(Number(form.extraPayment) || 0)}.
           </p>
 
           <div className="result-grid">

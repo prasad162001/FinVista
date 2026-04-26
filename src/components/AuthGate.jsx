@@ -49,6 +49,12 @@ export function AuthGate({ onLogin, onRegister, onContinueGuest }) {
           ? 'Password must be at least 6 characters.'
           : ''
 
+  const submitDisabled =
+    submitting ||
+    !emailIsValid ||
+    !passwordIsValid ||
+    (mode === 'register' && !nameIsValid)
+
   return (
     <div className="auth-shell">
       <section className="auth-hero">
@@ -197,15 +203,15 @@ export function AuthGate({ onLogin, onRegister, onContinueGuest }) {
           ) : null}
 
           <div className="cta-row">
-            <button className="primary-button" type="submit" disabled={submitting}>
+            <button className="primary-button" type="submit" disabled={submitDisabled}>
               {submitting
                 ? 'Please wait...'
                 : mode === 'login'
                   ? 'Welcome back to FinVista'
                   : 'Create your FinVista account'}
             </button>
-            <button className="guest-button" type="button" onClick={onContinueGuest}>
-              Continue in guest mode
+            <button className="guest-button guest-primary" type="button" onClick={onContinueGuest}>
+              Continue as Guest
             </button>
           </div>
         </form>

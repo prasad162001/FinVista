@@ -17,8 +17,73 @@ import {
 
 const defaultPort = Number(process.env.PORT) || 4000
 const jwtSecret = process.env.JWT_SECRET || 'finvista-dev-secret'
-const allowedPlanTypes = new Set(['loan', 'insurance', 'sip'])
+const allowedPlanTypes = new Set([
+  'loan',
+  'insurance',
+  'sip',
+  'pf-vpf',
+  'term-plan',
+  'health-insurance',
+  'property-insurance',
+  'tax',
+  'expenses',
+])
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+function isPlainObject(value) {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
+}
+
+function normalizePlanPayload(payload) {
+  const { type, name, description, inputs, summary } = payload || {}
+
+  if (!type || !name || !inputs || !summary) {
+    return {
+      error: 'Plan type, name, inputs, and summary are required.',
+      status: 400,
+    }
+  }
+
+  if (!allowedPlanTypes.has(type)) {
+    return {
+      error: 'Unsupported plan type.',
+      status: 400,
+    }
+  }
+
+  const normalizedName = String(name).trim()
+
+  if (normalizedName.length < 2) {
+    return {
+      error: 'Plan name must be at least 2 characters long.',
+      status: 400,
+    }
+  }
+
+  if (!isPlainObject(inputs)) {
+    return {
+      error: 'Plan inputs must be a valid object.',
+      status: 400,
+    }
+  }
+
+  if (!isPlainObject(summary)) {
+    return {
+      error: 'Plan summary must be a valid object.',
+      status: 400,
+    }
+  }
+
+  return {
+    value: {
+      type,
+      name: normalizedName,
+      description: String(description || 'Saved financial scenario').trim() || 'Saved financial scenario',
+      inputs,
+      summary,
+    },
+  }
+}
 
 function signToken(user) {
   return jwt.sign(
@@ -166,35 +231,27 @@ function createApp() {
   })
 
   app.post('/api/plans', authMiddleware, async (request, response) => {
-    const { type, name, description, inputs, summary } = request.body || {}
+    const normalized = normalizePlanPayload(request.body)
 
-    if (!type || !name || !inputs || !summary) {
-      response.status(400).json({ message: 'Plan type, name, inputs, and summary are required.' })
+    if (normalized.error) {
+      response.status(normalized.status).json({ message: normalized.error })
       return
     }
 
-    if (!allowedPlanTypes.has(type)) {
-      response.status(400).json({ message: 'Plan type must be loan, insurance, or sip.' })
-      return
+    try {
+      const plan = await createPlan(normalized.value, request.user.id)
+      response.status(201).json({ plan })
+    } catch (error) {
+      console.error('Failed to save plan', {
+        message: error.message,
+        userId: request.user.id,
+        type: normalized.value.type,
+      })
+
+      response.status(500).json({
+        message: 'We could not save this plan right now. Please try again in a moment.',
+      })
     }
-
-    if (String(name).trim().length < 2) {
-      response.status(400).json({ message: 'Plan name must be at least 2 characters long.' })
-      return
-    }
-
-    const plan = await createPlan(
-      {
-        type,
-        name: String(name).trim(),
-        description: description || 'Saved financial scenario',
-        inputs,
-        summary,
-      },
-      request.user.id,
-    )
-
-    response.status(201).json({ plan })
   })
 
   app.delete('/api/plans/:id', authMiddleware, async (request, response) => {

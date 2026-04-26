@@ -1,13 +1,15 @@
 import { useState } from 'react'
+import { NumericField } from '../../components/NumericField'
 import { calculateSip } from '../../lib/calculators'
 import { formatCurrency, formatNumber } from '../../lib/formatters'
+import { updateNumericField } from '../../lib/formNumbers'
 
 const initialState = {
   name: 'Long Term Wealth Plan',
-  monthlyContribution: 15000,
-  annualReturn: 12,
-  years: 15,
-  stepUp: 5,
+  monthlyContribution: '15000',
+  annualReturn: '12',
+  years: '15',
+  stepUp: '5',
 }
 
 export function SipCalculator({ onSave, accessMode }) {
@@ -16,6 +18,10 @@ export function SipCalculator({ onSave, accessMode }) {
   const [message, setMessage] = useState('')
 
   const result = calculateSip(form)
+  const updateMonthlyContribution = updateNumericField(setForm, 'monthlyContribution')
+  const updateAnnualReturn = updateNumericField(setForm, 'annualReturn')
+  const updateYears = updateNumericField(setForm, 'years')
+  const updateStepUp = updateNumericField(setForm, 'stepUp')
 
   function updateField(field, value) {
     setForm((current) => ({ ...current, [field]: value }))
@@ -29,7 +35,7 @@ export function SipCalculator({ onSave, accessMode }) {
       await onSave({
         type: 'sip',
         name: form.name,
-        description: `SIP plan with ${formatCurrency(form.monthlyContribution)} monthly investment`,
+        description: `SIP plan with ${formatCurrency(Number(form.monthlyContribution) || 0)} monthly investment`,
         inputs: form,
         summary: result,
       })
@@ -66,58 +72,31 @@ export function SipCalculator({ onSave, accessMode }) {
                 onChange={(event) => updateField('name', event.target.value)}
               />
             </label>
-            <label className="field">
-              <span>Monthly contribution</span>
-              <input
-                type="number"
-                min="500"
-                step="500"
-                value={form.monthlyContribution}
-                onChange={(event) =>
-                  updateField('monthlyContribution', Number(event.target.value))
-                }
-              />
-            </label>
-            <label className="field">
-              <span>Expected annual return (%)</span>
-              <input
-                type="number"
-                min="1"
-                step="0.1"
-                value={form.annualReturn}
-                onChange={(event) => updateField('annualReturn', Number(event.target.value))}
-              />
-            </label>
-            <label className="field">
-              <span>Investment term (years)</span>
-              <input
-                type="number"
-                min="1"
-                max="40"
-                value={form.years}
-                onChange={(event) => updateField('years', Number(event.target.value))}
-              />
-            </label>
+            <NumericField label="Monthly contribution" type="number" min="0" step="500" inputMode="numeric" value={form.monthlyContribution} onChange={updateMonthlyContribution} />
+            <NumericField label="Expected annual return (%)" type="number" min="0" step="0.1" inputMode="decimal" value={form.annualReturn} onChange={updateAnnualReturn} />
+            <NumericField label="Investment term (years)" type="number" min="0" max="40" inputMode="numeric" value={form.years} onChange={updateYears} />
           </div>
 
-          <label className="field">
+          <div className="field">
             <span>Annual step-up (%)</span>
             <input
               type="range"
               min="0"
               max="20"
-              value={form.stepUp}
-              onChange={(event) => updateField('stepUp', Number(event.target.value))}
+              value={Number(form.stepUp) || 0}
+              onChange={updateStepUp}
             />
-            <input
+            <NumericField
+              label="Annual step-up value"
               type="number"
               min="0"
               max="20"
+              inputMode="numeric"
               value={form.stepUp}
-              onChange={(event) => updateField('stepUp', Number(event.target.value))}
+              onChange={updateStepUp}
+              help="Increase your SIP contribution a little every year."
             />
-            <small>Increase your SIP contribution a little every year.</small>
-          </label>
+          </div>
         </div>
 
         <div className="result-card">

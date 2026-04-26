@@ -27,6 +27,23 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+:root[data-theme='dark'] {
+  --bg: #071220;
+  --paper: #0f1b2d;
+  --ink: #ecf4ff;
+  --text: #d4e0ee;
+  --text-soft: #95a8bf;
+  --accent: #ef764e;
+  --accent-strong: #ff936b;
+  --metric-label: #b6c3d5;
+  --metric-value: #e8efff;
+  color: var(--text);
+  background:
+    radial-gradient(circle at top left, rgba(239, 118, 78, 0.14), transparent 22%),
+    radial-gradient(circle at top right, rgba(71, 102, 152, 0.14), transparent 26%),
+    linear-gradient(180deg, #071220 0%, #0b1424 100%);
+}
+
 * {
   box-sizing: border-box;
 }
@@ -35,6 +52,8 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+  background: var(--bg);
+  overflow-x: hidden;
 }
 
 button,
@@ -81,4 +100,5 @@ p {
 
 #root {
   min-height: 100vh;
+  width: 100%;
 }
