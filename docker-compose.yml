@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  finvista:
+    build: .
+    ports:
+      - "4000:4000"
+    volumes:
+      - finvista_data:/app/server/data
+    environment:
+      - NODE_ENV=production
+      - PORT=4000
+      - JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
+    restart: unless-stopped
+
+volumes:
+  finvista_data:

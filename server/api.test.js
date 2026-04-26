@@ -1,0 +1,149 @@
+import test from 'node:test'
+import assert from 'node:assert/strict'
+import path from 'node:path'
+import { mkdtempSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { pathToFileURL } from 'node:url'
+
+const tempDir = mkdtempSync(path.join(tmpdir(), 'finvista-test-'))
+process.env.FINVISTA_DB_PATH = path.join(tempDir, 'finvista.test.db')
+process.env.JWT_SECRET = 'test-secret'
+
+const serverModule = await import(pathToFileURL(path.resolve('server/index.js')).href)
+const { createApp } = serverModule
+const { ensureSeedData } = await import(pathToFileURL(path.resolve('server/db.js')).href)
+
+function createJsonRequest(server) {
+  return async function json(pathname, options = {}) {
+    const address = server.address()
+    const url = `http://127.0.0.1:${address.port}${pathname}`
+    const response = await fetch(url, options)
+    const body = await response.json()
+    return { response, body }
+  }
+}
+
+test('auth and plan API flows work end-to-end', async () => {
+  await ensureSeedData()
+  const app = createApp()
+  const server = app.listen(0)
+  const json = createJsonRequest(server)
+
+  try {
+    const health = await json('/api/health')
+    assert.equal(health.response.status, 200)
+    assert.equal(health.body.ok, true)
+
+    const register = await json('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: 'Test User',
+        email: 'test.user@example.com',
+        password: 'secret123',
+      }),
+    })
+
+    assert.equal(register.response.status, 201)
+    assert.ok(register.body.token)
+
+    const duplicate = await json('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: 'Test User',
+        email: 'test.user@example.com',
+        password: 'secret123',
+      }),
+    })
+
+    assert.equal(duplicate.response.status, 409)
+
+    const badPassword = await json('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: 'Tiny',
+        email: 'tiny@example.com',
+        password: '123',
+      }),
+    })
+
+    assert.equal(badPassword.response.status, 400)
+
+    const me = await json('/api/auth/me', {
+      headers: { Authorization: `Bearer ${register.body.token}` },
+    })
+
+    assert.equal(me.response.status, 200)
+    assert.equal(me.body.user.email, 'test.user@example.com')
+
+    const create = await json('/api/plans', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${register.body.token}`,
+      },
+      body: JSON.stringify({
+        type: 'loan',
+        name: 'My Loan Plan',
+        description: 'Testing plan creation',
+        inputs: { amount: 1000000, rate: 9, years: 10, extraPayment: 0 },
+        summary: { monthlyPayment: 12668, totalInterest: 520160, interestSaved: 0 },
+      }),
+    })
+
+    assert.equal(create.response.status, 201)
+    assert.equal(create.body.plan.name, 'My Loan Plan')
+
+    const plans = await json('/api/plans', {
+      headers: { Authorization: `Bearer ${register.body.token}` },
+    })
+
+    assert.equal(plans.response.status, 200)
+    assert.equal(plans.body.plans.length, 1)
+
+    const dashboard = await json('/api/dashboard', {
+      headers: { Authorization: `Bearer ${register.body.token}` },
+    })
+
+    assert.equal(dashboard.response.status, 200)
+    assert.equal(dashboard.body.summary.loanPlans, 1)
+    assert.equal(dashboard.body.summary.monthlyCommitment, 12668)
+
+    const unauthorizedPlans = await json('/api/plans')
+    assert.equal(unauthorizedPlans.response.status, 401)
+
+    const invalidType = await json('/api/plans', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${register.body.token}`,
+      },
+      body: JSON.stringify({
+        type: 'budget',
+        name: 'Invalid',
+        description: 'Bad type',
+        inputs: { foo: 1 },
+        summary: { foo: 1 },
+      }),
+    })
+
+    assert.equal(invalidType.response.status, 400)
+
+    const removed = await json(`/api/plans/${create.body.plan._id}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${register.body.token}` },
+    })
+
+    assert.equal(removed.response.status, 200)
+    assert.equal(removed.body.ok, true)
+  } finally {
+    await new Promise((resolve, reject) => {
+      server.close((error) => {
+        if (error) reject(error)
+        else resolve()
+      })
+    })
+  }
+})

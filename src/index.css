@@ -1,0 +1,84 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Roboto:wght@400;500&display=swap');
+
+:root {
+  --bg: #f6efe6;
+  --paper: #fffaf4;
+  --ink: #101b34;
+  --text: #31415f;
+  --text-soft: #708099;
+  --accent: #ef764e;
+  --accent-strong: #c75935;
+  --heading: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  --body: 'Roboto', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  --metric-label: #6b7280;
+  --metric-value: #1e3a8a;
+
+  font-family: var(--body);
+  line-height: 1.5;
+  font-weight: 400;
+  color: var(--text);
+  background:
+    radial-gradient(circle at top left, rgba(239, 118, 78, 0.16), transparent 22%),
+    radial-gradient(circle at top right, rgba(16, 27, 52, 0.1), transparent 26%),
+    linear-gradient(180deg, #fcf6ee 0%, #f6efe6 100%);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+button,
+input,
+select {
+  font: inherit;
+  font-family: var(--body);
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 3px solid rgba(239, 118, 78, 0.28);
+  outline-offset: 2px;
+}
+
+h1,
+h2,
+h3,
+strong {
+  color: var(--ink);
+  font-family: var(--heading);
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(2.4rem, 5vw, 4.8rem);
+  line-height: 0.95;
+  letter-spacing: -0.04em;
+}
+
+h2 {
+  font-size: clamp(1.5rem, 2vw, 2.1rem);
+  line-height: 1.1;
+}
+
+h3 {
+  font-size: 1.2rem;
+}
+
+p {
+  margin: 0;
+}
+
+#root {
+  min-height: 100vh;
+}
